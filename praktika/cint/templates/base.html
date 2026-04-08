@@ -1,0 +1,73 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ЦИНТ Хакасии - Учёт заявок</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="icon" type="image/png" href="{% static 'image.png' %}">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{% if user.is_authenticated %}{% url 'home' %}{% else %}{% url 'login' %}{% endif %}">
+                <img src="{% static 'image.png' %}" alt="Логотип" height="40"> ГАУ РХ «ЦИНТ Хакасии»
+            </a>
+            <div class="navbar-nav ms-auto">
+                {% if user.is_authenticated %}
+                    <span class="nav-link text-light">{{ user.username }} ({{ user.role.name|default:"без роли" }})</span>
+                    <a class="nav-link" href="{% url 'request_list' %}">Заявки</a>
+
+                    {% if user.role and user.role.name == 'Клиент' %}
+                        <a class="nav-link" href="{% url 'create_request' %}">Новая заявка</a>
+                    {% endif %}
+
+                    {% if user.role and user.role.name == 'Администратор' %}
+                        <a class="nav-link" href="{% url 'deleted_requests' %}">Архив</a>
+                    {% endif %}
+
+                    {# Статистика и отчёт только для администратора и менеджера #}
+                    {% if user.role and user.role.name == 'Администратор' %}
+                        <a class="nav-link" href="{% url 'statistics' %}">Статистика</a>
+                        <a class="nav-link" href="{% url 'requests_report' %}">Отчёт</a>
+                    {% elif user.role and user.role.name == 'Менеджер' %}
+                        <a class="nav-link" href="{% url 'statistics' %}">Статистика</a>
+                        <a class="nav-link" href="{% url 'requests_report' %}">Отчёт</a>
+                    {% endif %}
+
+                    <a class="nav-link" href="{% url 'logout' %}">Выйти</a>
+                {% else %}
+                    <a class="nav-link" href="{% url 'login' %}">Вход</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show d-flex align-items-center" role="alert">
+                    {% if message.tags == 'success' %}
+                        <i class="bi bi-check-circle-fill me-2"></i><strong>Успех!</strong>
+                    {% elif message.tags == 'error' %}
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i><strong>Ошибка!</strong>
+                    {% elif message.tags == 'warning' %}
+                        <i class="bi bi-exclamation-diamond-fill me-2"></i><strong>Внимание!</strong>
+                    {% else %}
+                        <i class="bi bi-info-circle-fill me-2"></i><strong>Информация</strong>
+                    {% endif %}
+                    <span class="ms-2">{{ message }}</span>
+                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

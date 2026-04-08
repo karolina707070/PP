@@ -1,0 +1,53 @@
+{% load static %}
+<table class="table table-bordered table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>Изображение</th>
+            <th>Название</th>
+            <th>Статус</th>
+            <th>Бюджет</th>
+            <th>Дата подачи</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for req in page_obj %}
+        <tr class="{% if req.is_important %}important-row{% endif %}">
+            <td>
+                {% if req.image %}
+                    <img src="{{ req.image.url }}" style="width:50px;height:50px;object-fit:cover;">
+                {% else %}
+                    <img src="{% static 'images/zagl.png' %}" style="width:50px;height:50px;object-fit:cover;">
+                {% endif %}
+            </td>
+            <td>{{ req.title }}</td>
+            <td>{{ req.status.name }}</td>
+            <td>{{ req.budget|default:"—"|floatformat:2 }} руб.</td>
+            <td>{{ req.submission_date|date:"d.m.Y H:i" }}</td>
+            <td>
+                <a href="{% url 'request_detail' req.id %}" class="btn btn-sm btn-info">Просмотр</a>
+                {% if user.role.name == 'Администратор' or user.role.name == 'Менеджер' or user.role.name == 'Клиент' and req.user == user and req.status.name == 'Новая' %}
+                    <a href="{% url 'request_edit' req.id %}" class="btn btn-sm btn-warning">Ред.</a>
+                {% endif %}
+                <a href="{% url 'confirm_delete' req.id %}" class="btn btn-sm btn-danger">Удалить</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6">Нет заявок</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<nav>
+    <ul class="pagination">
+        {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link ajax-page" href="#" data-page="1">Первая</a></li>
+            <li class="page-item"><a class="page-link ajax-page" href="#" data-page="{{ page_obj.previous_page_number }}">Предыдущая</a></li>
+        {% endif %}
+        <li class="page-item active"><span class="page-link">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link ajax-page" href="#" data-page="{{ page_obj.next_page_number }}">Следующая</a></li>
+            <li class="page-item"><a class="page-link ajax-page" href="#" data-page="{{ page_obj.paginator.num_pages }}">Последняя</a></li>
+        {% endif %}
+    </ul>
+</nav>

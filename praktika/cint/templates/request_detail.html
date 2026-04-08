@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="mb-3">
+    <a href="javascript:history.back()" class="btn btn-secondary">← Назад</a>
+</div>
+<h2>{{ request_obj.title }}</h2>
+<div class="card mb-3">
+    <div class="card-body">
+        <p><strong>Клиент:</strong> {{ request_obj.user.username }}</p>
+        <p><strong>Направление:</strong> {{ request_obj.direction.name }}</p>
+        <p><strong>Статус:</strong> {{ request_obj.status.name }}</p>
+        <p><strong>Цель:</strong> {{ request_obj.goal }}</p>
+        <p><strong>Ожидаемые результаты:</strong> {{ request_obj.expected_results }}</p>
+        <p><strong>Описание:</strong> {{ request_obj.description }}</p>
+        <p><strong>Срок:</strong> {{ request_obj.deadline|default:"—" }}</p>
+        <p><strong>Бюджет:</strong> {{ request_obj.budget|default:"—"|floatformat:2 }} руб.</p>
+        {% if request_obj.image %}<img src="{{ request_obj.image.url }}" style="max-width:300px; max-height:200px;">{% else %}<div class="bg-light p-3 text-center">Нет изображения</div>{% endif %}
+    </div>
+</div>
+<h3>Комментарии</h3>
+<ul class="list-group mb-3">{% for comment in comments %}<li class="list-group-item"><strong>{{ comment.author.username }}</strong> ({{ comment.created_at|date:"d.m.Y H:i" }}): {{ comment.text }}</li>{% empty %}<li class="list-group-item">Нет комментариев.</li>{% endfor %}</ul>
+<form method="post" class="mb-4">{% csrf_token %}{{ comment_form.as_p }}<button type="submit" name="add_comment" class="btn btn-secondary">Добавить комментарий</button></form>
+{% if assign_form %}
+    <div class="card mt-3">
+        <div class="card-header bg-secondary text-white">Назначение специалиста</div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                {{ assign_form.as_p }}
+                <button type="submit" name="assign_specialist" class="btn btn-primary">Назначить</button>
+            </form>
+            {% if request_obj.responsible_specialist %}
+                <p class="mt-2">Текущий специалист: <strong>{{ request_obj.responsible_specialist.username }}</strong></p>
+            {% else %}
+                <p class="mt-2 text-muted">Специалист не назначен</p>
+            {% endif %}
+        </div>
+    </div>
+{% endif %}
+
+{% if user.role.name == 'Администратор' or user.role.name == 'Менеджер' %}
+    <div class="card mt-3">
+        <div class="card-header bg-warning">Изменение статуса</div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-4">
+                        <select name="status_id" class="form-select">
+                            {% for status in statuses %}
+                                <option value="{{ status.id }}" {% if request_obj.status.id == status.id %}selected{% endif %}>
+                                    {{ status.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" name="change_status" class="btn btn-primary">Изменить статус</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endif %}
+<h3>Оценка заявки</h3>
+{% if assessment %}<div class="card mb-3"><div class="card-body"><p><strong>Специалист:</strong> {{ assessment.specialist.username }}</p><p><strong>Трудозатраты:</strong> {{ assessment.labor_hours|default:"—" }} ч.</p><p><strong>Ресурсы:</strong> {{ assessment.resources }}</p><p><strong>Заключение:</strong> {{ assessment.conclusion }}</p><p><strong>Дата оценки:</strong> {{ assessment.assessment_date|date:"d.m.Y H:i" }}</p></div></div>
+{% elif user.role.name == 'Специалист' or user.role.name == 'Администратор' %}<form method="post" class="mb-4">{% csrf_token %}{{ assessment_form.as_p }}<button type="submit" name="add_assessment" class="btn btn-success">Сохранить оценку</button></form>{% endif %}
+{% endblock %}

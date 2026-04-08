@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white"><i class="bi bi-exclamation-triangle-fill"></i> Подтверждение удаления</div>
+            <div class="card-body">
+                <p>Вы действительно хотите удалить заявку <strong>"{{ request_obj.title }}"</strong>?</p>
+                <p class="text-danger">Это действие необратимо.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" name="confirm" value="yes" class="btn btn-danger">Да, удалить</button>
+                    <a href="{% url 'request_list' %}" class="btn btn-secondary">Отмена</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

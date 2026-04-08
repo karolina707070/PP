@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-4">
+        <h2 class="text-center">Авторизация</h2>
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label>Логин</label>
+                <input type="text" name="username" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label>Пароль</label>
+                <input type="password" name="password" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Войти</button>
+        </form>
+        <div class="text-center mt-3">
+            <a href="{% url 'guest' %}" class="text-muted">Продолжить как гость (ограниченный доступ)</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

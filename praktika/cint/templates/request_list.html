@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<h2>Список заявок</h2>
+
+<form id="filter-form" method="get" class="row g-3 mb-4">
+    <div class="col-md-3">
+        <input type="text" name="search" id="search" class="form-control" placeholder="Поиск" value="{{ search_query }}">
+    </div>
+    <div class="col-md-2">
+        <select name="direction" id="direction" class="form-select">
+            <option value="all">Все направления</option>
+            {% for d in directions %}
+                <option value="{{ d.id }}" {% if selected_direction == d.id|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select name="status" id="status" class="form-select">
+            <option value="all">Все статусы</option>
+            {% for s in statuses %}
+                <option value="{{ s.id }}" {% if selected_status == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select name="sort" id="sort" class="form-select">
+            <option value="-submission_date" {% if sort_by == '-submission_date' %}selected{% endif %}>Новые сначала</option>
+            <option value="budget_asc" {% if sort_by == 'budget_asc' %}selected{% endif %}>Бюджет (возр.)</option>
+            <option value="budget_desc" {% if sort_by == 'budget_desc' %}selected{% endif %}>Бюджет (убыв.)</option>
+            <option value="deadline_asc" {% if sort_by == 'deadline_asc' %}selected{% endif %}>Срок (раньше)</option>
+        </select>
+    </div>
+    <div class="col-md-1">
+        <a href="{% url 'request_list' %}" class="btn btn-secondary w-100">Сброс</a>
+    </div>
+</form>
+
+<div id="requests-table">
+    {% include 'partials/requests_table.html' %}
+</div>
+
+<p><a href="{% url 'create_request' %}" class="btn btn-primary">Создать новую заявку</a></p>
+
+<script>
+
+    const form = document.getElementById('filter-form');
+    const container = document.getElementById('requests-table');
+
+    function updateTable() {
+        const params = new URLSearchParams(new FormData(form)).toString();
+        fetch(`?${params}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.text())
+        .then(html => {
+            container.innerHTML = html;
+            attachPaginationHandlers();
+        })
+        .catch(error => console.error('Ошибка:', error));
+    }
+
+    function attachPaginationHandlers() {
+        document.querySelectorAll('.ajax-page').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const page = this.dataset.page;
+                const params = new URLSearchParams(new FormData(form));
+                params.set('page', page);
+                fetch(`?${params.toString()}`, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    container.innerHTML = html;
+                    attachPaginationHandlers();
+                });
+            });
+        });
+    }
+
+
+    form.querySelectorAll('input, select').forEach(el => {
+        el.addEventListener('input', updateTable);
+        el.addEventListener('change', updateTable);
+    });
+
+    attachPaginationHandlers();
+</script>
+{% endblock %}

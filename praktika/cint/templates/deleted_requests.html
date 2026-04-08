@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="mb-3">
+    <a href="{% url 'request_list' %}" class="btn btn-secondary">← Назад к заявкам</a>
+</div>
+<h2>Мягко удалённые заявки</h2>
+
+<form method="get" class="row g-3 mb-3">
+    <div class="col-md-4">
+        <input type="text" name="search" class="form-control" placeholder="Поиск по названию" value="{{ request.GET.search|default:'' }}">
+    </div>
+    <div class="col-md-2">
+        <select name="sort" class="form-select">
+            <option value="-delete_date" {% if request.GET.sort == '-delete_date' %}selected{% endif %}>По дате удаления (новые)</option>
+            <option value="title" {% if request.GET.sort == 'title' %}selected{% endif %}>По названию</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary">Применить</button>
+    </div>
+</form>
+
+{% if requests %}
+    <table class="table table-bordered">
+        <thead class="table-dark">
+            <tr><th>Название</th><th>Дата удаления</th><th>Восстановить</th></tr>
+        </thead>
+        <tbody>
+            {% for req in requests %}
+            <tr>
+                <td>{{ req.title }}</td>
+                <td>{{ req.delete_date|date:"d.m.Y H:i" }}</td>
+                <td><a href="{% url 'restore' req.id %}" class="btn btn-success btn-sm">Восстановить</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p class="text-muted">Нет удалённых заявок.</p>
+{% endif %}
+{% endblock %}

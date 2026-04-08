@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="jumbotron">
+    <h1 class="display-4">Добро пожаловать, {{ user.username }}!</h1>
+    <p class="lead">Вы вошли как {{ user.role.name|default:"пользователь" }}.</p>
+    <hr class="my-4">
+    <div class="d-grid gap-2 d-md-block">
+        <a href="{% url 'request_list' %}" class="btn btn-primary btn-lg">Список заявок</a>
+
+        {% if user.role and user.role.name == 'Клиент' %}
+            <a href="{% url 'create_request' %}" class="btn btn-success btn-lg">Создать заявку</a>
+        {% endif %}
+
+        {# Статистика и отчёт только для менеджера или администратора #}
+        {% if user.role and user.role.name == 'Администратор' or user.role.name == 'Менеджер' %}
+            <a href="{% url 'statistics' %}" class="btn btn-info btn-lg">Статистика</a>
+            <a href="{% url 'requests_report' %}" class="btn btn-secondary btn-lg">Отчёт</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
