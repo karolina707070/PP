@@ -43,7 +43,6 @@
 <p><a href="{% url 'create_request' %}" class="btn btn-primary">Создать новую заявку</a></p>
 
 <script>
-
     const form = document.getElementById('filter-form');
     const container = document.getElementById('requests-table');
 
@@ -56,6 +55,7 @@
         .then(html => {
             container.innerHTML = html;
             attachPaginationHandlers();
+            if (window.initTooltips) window.initTooltips();
         })
         .catch(error => console.error('Ошибка:', error));
     }
@@ -74,11 +74,11 @@
                 .then(html => {
                     container.innerHTML = html;
                     attachPaginationHandlers();
+                    if (window.initTooltips) window.initTooltips();
                 });
             });
         });
     }
-
 
     form.querySelectorAll('input, select').forEach(el => {
         el.addEventListener('input', updateTable);
