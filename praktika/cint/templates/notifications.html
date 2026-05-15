@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="mb-3">
+    <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-house-door"></i> На главную
+    </a>
+</div>
+
+<h2><i class="bi bi-bell"></i> Мои уведомления</h2>
+
+<div class="list-group mt-3">
+    {% for notif in notifications %}
+        <div class="list-group-item {% if not notif.is_read %}list-group-item-primary{% endif %}">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <strong>{{ notif.title }}</strong>
+                    <br>
+                    <small class="text-muted">{{ notif.created_at|date:"d.m.Y H:i" }}</small>
+                    <p class="mb-1 mt-1">{{ notif.message }}</p>
+                </div>
+                <div class="btn-group-vertical">
+                    {% if notif.request %}
+                        <a href="{% url 'request_detail' notif.request.id %}" class="btn btn-sm btn-primary mb-1">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    {% endif %}
+                    {% if not notif.is_read %}
+                        <a href="{% url 'mark_notification_read' notif.id %}" class="btn btn-sm btn-outline-secondary mb-1">
+                            <i class="bi bi-check-lg"></i>
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'delete_notification' notif.id %}" class="btn btn-sm btn-outline-danger"
+                       onclick="return confirm('Удалить уведомление?')">
+                        <i class="bi bi-trash"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="alert alert-secondary">У вас нет уведомлений</div>
+    {% endfor %}
+</div>
+
+{% endblock %}

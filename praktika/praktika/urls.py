@@ -21,6 +21,7 @@ from cint import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.login_view, name='login'),
+    path('register/', views.register_view, name='register'),
     path('guest/', views.guest_view, name='guest'),
     path('logout/', views.logout_view, name='logout'),
     path('home/', views.home, name='home'),
@@ -34,5 +35,8 @@ urlpatterns = [
     path('statistics/', views.statistics, name='statistics'),
     path('report/', views.requests_report, name='requests_report'),
     path('export/csv/', views.export_requests_csv, name='export_csv'),
+    path('notifications/', views.notifications_view, name='notifications'),
+    path('notifications/read/<int:pk>/', views.mark_notification_read, name='mark_notification_read'),
+    path('notifications/delete/<int:pk>/', views.delete_notification, name='delete_notification'),
+    path('hard_delete/<int:pk>/', views.hard_delete, name='hard_delete'),
 ]
-

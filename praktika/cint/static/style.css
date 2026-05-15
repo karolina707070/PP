@@ -1,4 +1,223 @@
-.important-row {
-    background-color: #fff3cd;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
+
+body {
+    font-family: 'Times New Roman', Times, 'Georgia', 'Cambria', serif;
+    font-size: 16px;
+    line-height: 1.5;
+    font-weight: 400;
+    color: #1e293b;
+    background-color: #f4f6f9;
+}
+
+h1, .h1 {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+h2, .h2 {
+    font-size: 1.75rem;
+    font-weight: 600;
+}
+
+h3, .h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+h4, .h4 {
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+h5, .h5 {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+h6, .h6 {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+
+p {
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+
+small, .text-small {
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: #64748b;
+}
+
+
+strong, b {
+    font-weight: 700;
+}
+
+
+a {
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+
+ul, ol {
+    padding-left: 1.25rem;
+}
+
+li {
+    line-height: 1.5;
+}
+
+
+.card-title {
+    font-weight: 600;
+}
+
+.card-text {
+    line-height: 1.5;
+}
+
+
+.table {
+    font-size: 0.875rem;
+}
+
+.table th {
+    font-weight: 600;
+}
+
+
+.btn {
+    font-weight: 500;
+}
+
+
+label, .form-label {
+    font-weight: 500;
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+    color: #334155;
+}
+
+input, select, textarea {
+    font-family: inherit;
+    font-size: 0.9375rem;
+}
+
+
+.navbar {
+    font-weight: 500;
+}
+
+.navbar-brand {
+    font-weight: 600;
+}
+
+.nav-link {
+    font-size: 0.9375rem;
+}
+
+
+.alert {
+    font-size: 0.875rem;
+}
+
+.badge {
+    font-weight: 500;
+    font-size: 0.75rem;
+}
+
+footer {
+    font-size: 0.8125rem;
+    color: #64748b;
+}
+
+.form-control, .form-select, textarea {
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    padding: 8px 12px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.form-control:focus, .form-select:focus, textarea:focus {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.form-label {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: #333;
+}
+
+.form-text {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+.invalid-feedback {
+    display: block;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: #dc3545;
+}
+
+.card {
+    border: none;
+    border-radius: 12px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card-header {
+    border-radius: 12px 12px 0 0 !important;
+}
+
+
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.d-flex.gap-2 {
+    gap: 0.5rem;
+}
+
+
+.card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+
+.hero-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 0 0 2rem 2rem;
+    margin-top: -1rem;
+}
+
+
+body {
+    font-size: 1rem;
+}
+@media (max-width: 768px) {
+    body {
+        font-size: 0.9rem;
+    }
+}
+
 

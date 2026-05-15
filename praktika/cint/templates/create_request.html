@@ -1,19 +1,136 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
+
 <div class="mb-3">
-    <a href="{% url 'request_list' %}" class="btn btn-secondary">← К списку заявок</a>
+    <a href="{% url 'request_list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> К списку заявок
+    </a>
+    <a href="{% url 'home' %}" class="btn btn-outline-secondary ms-2">
+        <i class="bi bi-house-door"></i> На главную
+    </a>
 </div>
-<h2>{% if edit %}Редактирование заявки{% else %}Новая заявка{% endif %}</h2>
 
-{% if edit %}
-    <div class="alert alert-secondary">
-        <strong>ID заявки:</strong> {{ form.instance.id }}
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h3 class="mb-0">
+            <i class="bi bi-pencil-square"></i>
+            {% if edit %}Редактирование заявки{% else %}Новая заявка{% endif %}
+        </h3>
     </div>
-{% endif %}
+    <div class="card-body">
+        {% if edit %}
+            <div class="alert alert-secondary">
+                <i class="bi bi-info-circle"></i> <strong>ID заявки:</strong> {{ form.instance.id }}
+            </div>
+        {% endif %}
 
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">Сохранить</button>
-</form>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="row">
+
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-pencil"></i> Название проекта <span class="text-danger">*</span>
+                        </label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <div class="invalid-feedback d-block">{{ form.title.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-bullseye"></i> Цель <span class="text-danger">*</span>
+                        </label>
+                        {{ form.goal }}
+                        {% if form.goal.errors %}
+                            <div class="invalid-feedback d-block">{{ form.goal.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-stars"></i> Ожидаемые результаты <span class="text-danger">*</span>
+                        </label>
+                        {{ form.expected_results }}
+                        {% if form.expected_results.errors %}
+                            <div class="invalid-feedback d-block">{{ form.expected_results.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-file-text"></i> Описание <span class="text-danger">*</span>
+                        </label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">{{ form.description.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-calendar"></i> Желаемый срок
+                        </label>
+                        {{ form.deadline }}
+                        <div class="form-text text-muted">Формат: ДД.ММ.ГГГГ</div>
+                        {% if form.deadline.errors %}
+                            <div class="invalid-feedback d-block">{{ form.deadline.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-currency-ruble"></i> Бюджет
+                        </label>
+                        {{ form.budget }}
+                        <div class="form-text text-muted">Положительное число, рубли</div>
+                        {% if form.budget.errors %}
+                            <div class="invalid-feedback d-block">{{ form.budget.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-tag"></i> Направление <span class="text-danger">*</span>
+                        </label>
+                        {{ form.direction }}
+                        {% if form.direction.errors %}
+                            <div class="invalid-feedback d-block">{{ form.direction.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-image"></i> Изображение
+                        </label>
+                        {{ form.image }}
+                        <div class="form-text text-muted">Загрузите изображение (максимум 300x200)</div>
+                        {% if form.image.errors %}
+                            <div class="invalid-feedback d-block">{{ form.image.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <hr>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Сохранить
+                </button>
+                <a href="{% url 'request_list' %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Отмена
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
 {% endblock %}

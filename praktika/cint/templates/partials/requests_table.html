@@ -12,7 +12,7 @@
     </thead>
     <tbody>
         {% for req in page_obj %}
-        <tr class="{% if req.is_important %}important-row{% endif %}">
+        <tr>
             <td style="width: 80px;">
                 {% if req.image %}
                     <img src="{{ req.image.url }}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 4px;">
@@ -28,7 +28,7 @@
                 <a href="{% url 'request_detail' req.id %}" class="btn btn-sm btn-outline-info" data-bs-toggle="tooltip" title="Просмотр">
                     <i class="bi bi-eye"></i>
                 </a>
-                {% if user.role.name == 'Администратор' or user.role.name == 'Менеджер' or user.role.name == 'Клиент' and req.user == user and req.status.name == 'Новая' %}
+                {% if user.role.name == 'Администратор' or user.role.name == 'Начальник отдела' or user.role.name == 'Клиент' and req.user == user and req.status.name == 'Новая' %}
                     <a href="{% url 'request_edit' req.id %}" class="btn btn-sm btn-outline-warning" data-bs-toggle="tooltip" title="Редактировать">
                         <i class="bi bi-pencil"></i>
                     </a>
@@ -40,7 +40,8 @@
         </tr>
         {% empty %}
         <tr>
-            <td colspan="6">Нет заявок</td></td>
+            <td colspan="6">Нет заявок</td>
+        </tr>
         {% endfor %}
     </tbody>
 </table>

@@ -1,9 +1,16 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
+
 <div class="mb-3">
-    <a href="{% url 'request_list' %}" class="btn btn-secondary">← Назад к заявкам</a>
+    <a href="{% url 'request_list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Назад к заявкам
+    </a>
+    <a href="{% url 'home' %}" class="btn btn-outline-secondary ms-2">
+        <i class="bi bi-house-door"></i> На главную
+    </a>
 </div>
+
 <h2>Мягко удалённые заявки</h2>
 
 <form method="get" class="row g-3 mb-3">
@@ -24,14 +31,27 @@
 {% if requests %}
     <table class="table table-bordered">
         <thead class="table-dark">
-            <tr><th>Название</th><th>Дата удаления</th><th>Восстановить</th></tr>
+            <tr>
+                <th>Название</th>
+                <th>Дата удаления</th>
+                <th>Восстановить</th>
+                <th>Полное удаление</th>
+            </tr>
         </thead>
         <tbody>
             {% for req in requests %}
             <tr>
                 <td>{{ req.title }}</td>
                 <td>{{ req.delete_date|date:"d.m.Y H:i" }}</td>
-                <td><a href="{% url 'restore' req.id %}" class="btn btn-success btn-sm">Восстановить</a></td>
+                <td>
+                    <a href="{% url 'restore' req.id %}" class="btn btn-success btn-sm">Восстановить</a>
+                </td>
+                <td>
+                    <a href="{% url 'hard_delete' req.id %}" class="btn btn-danger btn-sm"
+                       onclick="return confirm('Удалить заявку НАВСЕГДА без возможности восстановления?')">
+                        Удалить навсегда
+                    </a>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
@@ -39,4 +59,5 @@
 {% else %}
     <p class="text-muted">Нет удалённых заявок.</p>
 {% endif %}
+
 {% endblock %}

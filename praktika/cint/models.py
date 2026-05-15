@@ -102,3 +102,31 @@ class Assessment(models.Model):
     resources = models.TextField(blank=True)
     conclusion = models.TextField(blank=True)
     assessment_date = models.DateTimeField(auto_now_add=True)
+
+
+class RequestHistory(models.Model):
+    request = models.ForeignKey(Request, on_delete=models.CASCADE, related_name='history')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    action = models.CharField(max_length=255, verbose_name="Действие")
+    timestamp = models.DateTimeField(auto_now_add=True, verbose_name="Дата и время")
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"{self.timestamp} - {self.user.username}: {self.action}"
+
+
+class Notification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    request = models.ForeignKey(Request, on_delete=models.CASCADE, null=True, blank=True)
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.title}"

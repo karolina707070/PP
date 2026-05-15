@@ -1,51 +1,119 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
+
 <div class="mb-3">
-    <a href="javascript:history.back()" class="btn btn-secondary">← Назад</a>
+    <a href="javascript:history.back()" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Назад
+    </a>
+    <a href="{% url 'home' %}" class="btn btn-outline-secondary ms-2">
+        <i class="bi bi-house-door"></i> На главную
+    </a>
 </div>
-<h2>{{ request_obj.title }}</h2>
-<div class="card mb-3">
-    <div class="card-body">
-        <p><strong>Клиент:</strong> {{ request_obj.user.username }}</p>
-        <p><strong>Направление:</strong> {{ request_obj.direction.name }}</p>
-        <p><strong>Статус:</strong> {{ request_obj.status.name }}</p>
-        <p><strong>Цель:</strong> {{ request_obj.goal }}</p>
-        <p><strong>Ожидаемые результаты:</strong> {{ request_obj.expected_results }}</p>
-        <p><strong>Описание:</strong> {{ request_obj.description }}</p>
-        <p><strong>Срок:</strong> {{ request_obj.deadline|default:"—" }}</p>
-        <p><strong>Бюджет:</strong> {{ request_obj.budget|default:"—"|floatformat:2 }} руб.</p>
-        {% if request_obj.image %}<img src="{{ request_obj.image.url }}" style="max-width:300px; max-height:200px;">{% else %}<div class="bg-light p-3 text-center">Нет изображения</div>{% endif %}
-    </div>
-</div>
-<h3>Комментарии</h3>
-<ul class="list-group mb-3">{% for comment in comments %}<li class="list-group-item"><strong>{{ comment.author.username }}</strong> ({{ comment.created_at|date:"d.m.Y H:i" }}): {{ comment.text }}</li>{% empty %}<li class="list-group-item">Нет комментариев.</li>{% endfor %}</ul>
-<form method="post" class="mb-4">{% csrf_token %}{{ comment_form.as_p }}<button type="submit" name="add_comment" class="btn btn-secondary">Добавить комментарий</button></form>
-{% if assign_form %}
-    <div class="card mt-3">
-        <div class="card-header bg-secondary text-white">Назначение специалиста</div>
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-                {{ assign_form.as_p }}
-                <button type="submit" name="assign_specialist" class="btn btn-primary">Назначить</button>
-            </form>
-            {% if request_obj.responsible_specialist %}
-                <p class="mt-2">Текущий специалист: <strong>{{ request_obj.responsible_specialist.username }}</strong></p>
-            {% else %}
-                <p class="mt-2 text-muted">Специалист не назначен</p>
-            {% endif %}
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">{{ request_obj.title }}</h3>
+                <small>Заявка №{{ request_obj.id }}</small>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-person"></i> Клиент:</strong> {{ request_obj.user.username }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-tag"></i> Направление:</strong>
+                        <span class="badge bg-info">{{ request_obj.direction.name }}</span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <strong><i class="bi bi-info-circle"></i> Статус:</strong>
+                    <span class="badge {% if request_obj.status.name == 'Новая' %}bg-primary{% elif request_obj.status.name == 'Одобрена' %}bg-success{% elif request_obj.status.name == 'Отклонена' %}bg-danger{% else %}bg-secondary{% endif %} ms-2">
+                        {{ request_obj.status.name }}
+                    </span>
+                </div>
+
+                <div class="mb-3">
+                    <strong><i class="bi bi-bullseye"></i> Цель:</strong>
+                    <p class="mt-1 ps-3 text-muted">{{ request_obj.goal|default:"—" }}</p>
+                </div>
+
+                <div class="mb-3">
+                    <strong><i class="bi bi-stars"></i> Ожидаемые результаты:</strong>
+                    <p class="mt-1 ps-3 text-muted">{{ request_obj.expected_results|default:"—" }}</p>
+                </div>
+
+                <div class="mb-3">
+                    <strong><i class="bi bi-file-text"></i> Описание:</strong>
+                    <p class="mt-1 ps-3 text-muted">{{ request_obj.description|default:"—" }}</p>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-calendar"></i> Срок:</strong>
+                        {{ request_obj.deadline|default:"—" }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong><i class="bi bi-currency-ruble"></i> Бюджет:</strong>
+                        {{ request_obj.budget|default:"—"|floatformat:2 }} руб.
+                    </div>
+                </div>
+
+                {% if request_obj.image %}
+                <div class="mt-3">
+                    <strong><i class="bi bi-image"></i> Изображение:</strong><br>
+                    <img src="{{ request_obj.image.url }}" class="img-fluid mt-2" style="max-width: 300px; max-height: 200px; border-radius: 8px;">
+                </div>
+                {% endif %}
+            </div>
         </div>
     </div>
-{% endif %}
 
-{% if user.role.name == 'Администратор' or user.role.name == 'Менеджер' %}
-    <div class="card mt-3">
-        <div class="card-header bg-warning">Изменение статуса</div>
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-                <div class="row">
-                    <div class="col-md-4">
+
+    <div class="col-md-4">
+
+        {% if assign_form %}
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-secondary text-white">
+                <strong><i class="bi bi-person-badge"></i> Назначение специалиста</strong>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-2">
+                        {{ assign_form.specialist.label_tag }}
+                        {{ assign_form.specialist }}
+                    </div>
+                    <button type="submit" name="assign_specialist" class="btn btn-sm btn-primary w-100">
+                        <i class="bi bi-check-lg"></i> Назначить
+                    </button>
+                </form>
+                {% if request_obj.responsible_specialist %}
+                    <div class="alert alert-info mt-2 mb-0 py-1 text-center">
+                        <i class="bi bi-person-check"></i> {{ request_obj.responsible_specialist.username }}
+                    </div>
+                {% else %}
+                    <div class="alert alert-secondary mt-2 mb-0 py-1 text-center">
+                        <i class="bi bi-person-x"></i> Не назначен
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+
+        {% if user.role.name == 'Администратор' or user.role.name == 'Начальник отдела' %}
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-info text-white">
+                <strong><i class="bi bi-arrow-repeat"></i> Изменение статуса</strong>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-2">
                         <select name="status_id" class="form-select">
                             {% for status in statuses %}
                                 <option value="{{ status.id }}" {% if request_obj.status.id == status.id %}selected{% endif %}>
@@ -54,15 +122,110 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="col-md-2">
-                        <button type="submit" name="change_status" class="btn btn-primary">Изменить статус</button>
+                    <button type="submit" name="change_status" class="btn btn-sm btn-primary w-100">
+                        <i class="bi bi-save"></i> Изменить статус
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-success text-white">
+                <strong><i class="bi bi-clipboard-check"></i> Оценка заявки</strong>
+            </div>
+            <div class="card-body">
+                {% if assessment %}
+                    <div class="mb-2">
+                        <strong>Специалист:</strong> {{ assessment.specialist.username }}
                     </div>
-                </div>
-            </form>
+                    <div class="mb-2">
+                        <strong>Трудозатраты:</strong> {{ assessment.labor_hours|default:"—" }} ч.
+                    </div>
+                    <div class="mb-2">
+                        <strong>Ресурсы:</strong> {{ assessment.resources|default:"—" }}
+                    </div>
+                    <div class="mb-2">
+                        <strong>Заключение:</strong> {{ assessment.conclusion|default:"—" }}
+                    </div>
+                    <div class="text-muted small">
+                        <i class="bi bi-calendar3"></i> {{ assessment.assessment_date|date:"d.m.Y H:i" }}
+                    </div>
+                {% elif user.role.name == 'Специалист' or user.role.name == 'Администратор' %}
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ assessment_form.as_p }}
+                        <button type="submit" name="add_assessment" class="btn btn-sm btn-success w-100 mt-2">
+                            <i class="bi bi-save"></i> Сохранить оценку
+                        </button>
+                    </form>
+                {% else %}
+                    <div class="text-muted text-center py-2">
+                        <i class="bi bi-clock-history"></i> Оценка не выставлена
+                    </div>
+                {% endif %}
+            </div>
         </div>
     </div>
-{% endif %}
-<h3>Оценка заявки</h3>
-{% if assessment %}<div class="card mb-3"><div class="card-body"><p><strong>Специалист:</strong> {{ assessment.specialist.username }}</p><p><strong>Трудозатраты:</strong> {{ assessment.labor_hours|default:"—" }} ч.</p><p><strong>Ресурсы:</strong> {{ assessment.resources }}</p><p><strong>Заключение:</strong> {{ assessment.conclusion }}</p><p><strong>Дата оценки:</strong> {{ assessment.assessment_date|date:"d.m.Y H:i" }}</p></div></div>
-{% elif user.role.name == 'Специалист' or user.role.name == 'Администратор' %}<form method="post" class="mb-4">{% csrf_token %}{{ assessment_form.as_p }}<button type="submit" name="add_assessment" class="btn btn-success">Сохранить оценку</button></form>{% endif %}
+</div>
+
+
+<div class="card shadow-sm mb-3">
+    <div class="card-header bg-dark text-white">
+        <strong><i class="bi bi-clock-history"></i> История изменений</strong>
+    </div>
+    <div class="card-body" style="max-height: 250px; overflow-y: auto;">
+        {% if request_obj.history.all %}
+            <div class="timeline">
+                {% for log in request_obj.history.all|slice:":20" %}
+                    <div class="mb-2 pb-2 border-bottom">
+                        <small class="text-muted">{{ log.timestamp|date:"d.m.Y H:i:s" }}</small><br>
+                        <span class="badge bg-secondary">{{ log.user.username }}</span>
+                        <span class="ms-2">{{ log.action }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-muted text-center py-3">
+                <i class="bi bi-inbox"></i> История пуста
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+
+<div class="card shadow-sm mb-3">
+    <div class="card-header bg-dark text-white">
+        <strong><i class="bi bi-chat-dots"></i> Комментарии</strong>
+    </div>
+    <div class="card-body">
+        {% if comments %}
+            <div style="max-height: 250px; overflow-y: auto;">
+                {% for comment in comments %}
+                    <div class="mb-2 pb-2 border-bottom">
+                        <strong><i class="bi bi-person-circle"></i> {{ comment.author.username }}</strong>
+                        <small class="text-muted">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
+                        <div class="ps-3 mt-1">{{ comment.text }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-muted text-center py-2">
+                <i class="bi bi-chat"></i> Нет комментариев
+            </div>
+        {% endif %}
+
+        <form method="post" class="mt-3">
+            {% csrf_token %}
+            <div class="mb-2">
+                {{ comment_form.text }}
+            </div>
+            <button type="submit" name="add_comment" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-send"></i> Добавить комментарий
+            </button>
+        </form>
+    </div>
+</div>
+
 {% endblock %}
