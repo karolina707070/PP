@@ -39,4 +39,5 @@ urlpatterns = [
     path('notifications/read/<int:pk>/', views.mark_notification_read, name='mark_notification_read'),
     path('notifications/delete/<int:pk>/', views.delete_notification, name='delete_notification'),
     path('hard_delete/<int:pk>/', views.hard_delete, name='hard_delete'),
+    path('request/<int:pk>/print/', views.print_request, name='print_request'),
 ]

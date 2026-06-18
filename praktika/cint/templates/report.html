@@ -3,110 +3,130 @@
 {% block content %}
 
 <div class="mb-3">
-    <a href="javascript:history.back()" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Назад
-    </a>
-    <a href="{% url 'home' %}" class="btn btn-outline-secondary ms-2">
-        <i class="bi bi-house-door"></i> На главную
-    </a>
+    <a href="javascript:history.back()" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Назад</a>
+    <a href="{% url 'home' %}" class="btn btn-outline-secondary ms-2"><i class="bi bi-house-door"></i> На главную</a>
 </div>
 
 <div class="card shadow-sm mb-4">
-    <div class="card-header bg-primary text-white">
-        <h4 class="mb-0">
-            <i class="bi bi-bar-chart-steps"></i> Отчёт по заявкам
-        </h4>
-    </div>
+    <div class="card-header bg-primary text-white"><h4><i class="bi bi-bar-chart-steps"></i> Отчёт по заявкам</h4></div>
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label fw-bold">
-                    <i class="bi bi-calendar-start"></i> Начальная дата
-                </label>
-                <input type="date" name="start_date" class="form-control" value="{{ request.GET.start_date|default:'' }}" required>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label fw-bold">
-                    <i class="bi bi-calendar-end"></i> Конечная дата
-                </label>
-                <input type="date" name="end_date" class="form-control" value="{{ request.GET.end_date|default:'' }}" required>
+            <div class="col-md-2">
+                <label class="form-label fw-bold">Тип отчёта</label>
+                <select name="report_type" class="form-select" onchange="this.form.submit()">
+                    <option value="summary" {% if report_type == 'summary' %}selected{% endif %}>📊 Сводный</option>
+                    <option value="detailed" {% if report_type == 'detailed' %}selected{% endif %}>📋 Детальный</option>
+                    <option value="specialist" {% if report_type == 'specialist' %}selected{% endif %}>👤 По исполнителям</option>
+                </select>
             </div>
             <div class="col-md-2">
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-search"></i> Сформировать
-                </button>
+                <label class="form-label fw-bold">Начало</label>
+                <input type="date" name="start_date" class="form-control" value="{{ start_date }}" required>
             </div>
             <div class="col-md-2">
-                <a href="{% url 'requests_report' %}" class="btn btn-secondary w-100">
-                    <i class="bi bi-arrow-repeat"></i> Сброс
-                </a>
+                <label class="form-label fw-bold">Конец</label>
+                <input type="date" name="end_date" class="form-control" value="{{ end_date }}" required>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold">Направление</label>
+                <select name="direction_id" class="form-select">
+                    <option value="all">Все</option>
+                    {% for d in directions %}<option value="{{ d.id }}" {% if selected_direction == d.id|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold">Статус</label>
+                <select name="status" class="form-select">
+                    <option value="all">Все</option>
+                    {% for s in statuses %}<option value="{{ s.name }}" {% if selected_status == s.name %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Сформировать</button>
+                <a href="{% url 'requests_report' %}" class="btn btn-secondary w-100 mt-1">Сброс</a>
             </div>
         </form>
     </div>
 </div>
 
-{% if report_data %}
+{% if summary %}
+<div class="row text-center mb-4">
+    <div class="col-md-2">
+        <a href="{% url 'request_list' %}?start_date={{ start_date }}&end_date={{ end_date }}" class="text-decoration-none">
+            <div class="card bg-primary text-white"><div class="card-body"><h5>Всего</h5><h3>{{ summary.total }}</h3></div></div>
+        </a>
+    </div>
+    <div class="col-md-2">
+        <a href="{% url 'request_list' %}?start_date={{ start_date }}&end_date={{ end_date }}&status=Новая" class="text-decoration-none">
+            <div class="card bg-info text-white"><div class="card-body"><h5>Новых</h5><h3>{{ summary.new }}</h3></div></div>
+        </a>
+    </div>
+    <div class="col-md-2">
+        <a href="{% url 'request_list' %}?start_date={{ start_date }}&end_date={{ end_date }}&status=Одобрена" class="text-decoration-none">
+            <div class="card bg-success text-white"><div class="card-body"><h5>Одобрено</h5><h3>{{ summary.approved }}</h3></div></div>
+        </a>
+    </div>
+    <div class="col-md-2">
+        <a href="{% url 'request_list' %}?start_date={{ start_date }}&end_date={{ end_date }}&status=Отклонена" class="text-decoration-none">
+            <div class="card bg-danger text-white"><div class="card-body"><h5>Отклонено</h5><h3>{{ summary.rejected }}</h3></div></div>
+        </a>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-warning"><div class="card-body"><h5>Бюджет</h5><h3>{{ summary.total_budget|floatformat:0 }} ₽</h3></div></div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-secondary text-white"><div class="card-body"><h5>Ср. бюджет</h5><h3>{{ summary.avg_budget|floatformat:0 }} ₽</h3></div></div>
+    </div>
+</div>
+
 <div class="card shadow-sm">
     <div class="card-header bg-dark text-white">
-        <h5 class="mb-0">
-            <i class="bi bi-table"></i> Результаты за период
-            {% if request.GET.start_date and request.GET.end_date %}
-                <span class="badge bg-light text-dark ms-2">
-                    {{ request.GET.start_date }} — {{ request.GET.end_date }}
-                </span>
-            {% endif %}
-        </h5>
+        <h5>{% if report_type == 'summary' %}<i class="bi bi-table"></i> Сводка по направлениям{% elif report_type == 'detailed' %}<i class="bi bi-list-ul"></i> Детальный список{% elif report_type == 'specialist' %}<i class="bi bi-people"></i> По исполнителям{% endif %}</h5>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-dark">
-                    <tr>
-                        <th><i class="bi bi-tag"></i> Направление</th>
-                        <th class="text-center"><i class="bi bi-file-text"></i> Количество</th>
-                        <th class="text-center"><i class="bi bi-eye"></i> Действие</th>
-                    </tr>
-                </thead>
+            <table class="table table-hover table-bordered mb-0">
+                {% if report_type == 'summary' %}
+                <thead class="table-dark"><tr><th>Направление</th><th class="text-center">Всего</th><th class="text-center">Новых</th><th class="text-center">Одобр.</th><th class="text-center">Откл.</th><th class="text-center">Бюджет</th><th class="text-center">Действие</th></tr></thead>
                 <tbody>
                     {% for row in report_data %}
-                    <tr style="cursor: pointer;" onclick="window.location.href='{% url 'request_list' %}?direction_id={{ row.2 }}&start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}'">
-                        <td class="fw-bold">{{ row.0 }}</td>
-                        <td class="text-center">
-                            <span class="badge bg-primary rounded-pill px-3 py-2">{{ row.1 }}</span>
-                        </td>
-                        <td class="text-center">
-                            <a href="{% url 'request_list' %}?direction_id={{ row.2 }}&start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}"
-                               class="btn btn-sm btn-outline-primary">
-                                <i class="bi bi-list-ul"></i> Показать
-                            </a>
-                        </td>
+                    <tr>
+                        <td>{{ row.direction__name }}</td>
+                        <td class="text-center fw-bold">{{ row.total }}</td>
+                        <td class="text-center">{{ row.new }}</td>
+                        <td class="text-center">{{ row.approved }}</td>
+                        <td class="text-center">{{ row.rejected }}</td>
+                        <td class="text-center">{{ row.total_budget|floatformat:0|default:"—" }} ₽</td>
+                        <td class="text-center"><a href="{% url 'request_list' %}?direction_id={{ row.direction_id }}&start_date={{ start_date }}&end_date={{ end_date }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-list-ul"></i> Показать</a></td>
                     </tr>
                     {% endfor %}
                 </tbody>
+                {% elif report_type == 'detailed' %}
+                <thead class="table-dark"><tr><th>ID</th><th>Название</th><th>Клиент</th><th>Направление</th><th>Статус</th><th>Дата</th></tr></thead>
+                <tbody>
+                    {% for r in detailed_list %}
+                    <tr><td>{{ r.id }}</td><td><a href="{% url 'request_detail' r.id %}">{{ r.title }}</a></td><td>{{ r.user.username }}</td><td>{{ r.direction.name }}</td><td>{{ r.status.name }}</td><td>{{ r.submission_date|date:"d.m.Y" }}</td></tr>
+                    {% empty %}<tr><td colspan="6" class="text-center text-muted">Нет данных</td></tr>{% endfor %}
+                </tbody>
+                {% elif report_type == 'specialist' %}
+                <thead class="table-dark"><tr><th>Исполнитель</th><th class="text-center">Всего</th><th class="text-center">Одобрено</th><th class="text-center">Отклонено</th><th class="text-center">Ср. часы</th></tr></thead>
+                <tbody>
+                    {% for s in specialist_data %}
+                    <tr>
+                        <td><strong>{{ s.responsible_specialist__username }}</strong></td>
+                        <td class="text-center fw-bold">{{ s.total }}</td>
+                        <td class="text-center text-success">{{ s.approved }}</td>
+                        <td class="text-center text-danger">{{ s.rejected }}</td>
+                        <td class="text-center">{{ s.avg_hours|floatformat:1|default:"—" }}</td>
+                    </tr>
+                    {% empty %}<tr><td colspan="5" class="text-center text-muted">Нет данных</td></tr>{% endfor %}
+                </tbody>
+                {% endif %}
             </table>
         </div>
     </div>
 </div>
-
-<div class="card shadow-sm mt-3 bg-light">
-    <div class="card-body">
-        <div class="row text-center">
-            <div class="col-md-6">
-                <h3 class="text-primary">{{ report_data|length }}</h3>
-                <span class="text-muted">направлений</span>
-            </div>
-            <div class="col-md-6">
-                <h3 class="text-muted">{{ request.GET.start_date|default:"—" }}</h3>
-                <span class="text-muted">по {{ request.GET.end_date|default:"—" }}</span>
-            </div>
-        </div>
-    </div>
-</div>
-
-{% elif request.GET.start_date and request.GET.end_date %}
-<div class="alert alert-warning text-center">
-    <i class="bi bi-inbox"></i> За указанный период заявок не найдено
-</div>
+{% elif start_date %}
+<div class="alert alert-warning text-center"><i class="bi bi-inbox"></i> Заявок за период не найдено</div>
 {% endif %}
-
 {% endblock %}

@@ -15,6 +15,8 @@ from .models import Request, Direction, RequestStatus, RequestHistory, Notificat
 from .forms import RequestCreateForm, CommentForm, AssessmentForm, AssignSpecialistForm, CustomUserCreationForm
 import matplotlib
 matplotlib.use('Agg')
+from django.db.models import Count, Sum, Avg, Q
+from django.db.models.functions import TruncMonth
 
 
 
@@ -157,7 +159,7 @@ def request_list(request):
 
         search_query = request.GET.get('search', '')
         direction_id = request.GET.get('direction_id', '')
-        status_id = request.GET.get('status', '')
+        status_name = request.GET.get('status', '')
         sort_by = request.GET.get('sort', '-submission_date')
 
         if search_query:
@@ -168,8 +170,8 @@ def request_list(request):
         if direction_id and direction_id != 'all':
             requests_list = requests_list.filter(direction_id=direction_id)
 
-        if status_id and status_id != 'all':
-            requests_list = requests_list.filter(status_id=status_id)
+        if status_name and status_name != 'all':
+            requests_list = requests_list.filter(status__name=status_name)
 
         if sort_by == 'budget_asc':
             requests_list = requests_list.order_by('budget')
@@ -195,7 +197,7 @@ def request_list(request):
             'statuses': RequestStatus.objects.all(),
             'search_query': search_query,
             'selected_direction': direction_id,
-            'selected_status': status_id,
+            'selected_status': status_name,
             'sort_by': sort_by,
             'query_string': query_string,
         }
@@ -207,7 +209,6 @@ def request_list(request):
     except Exception as e:
         messages.error(request, f'Ошибка загрузки списка: {str(e)}')
         return redirect('home')
-
 
 
 @login_required
@@ -228,6 +229,7 @@ def request_detail(request, pk):
     comments = req.comments.all().order_by('created_at')
     assessment = getattr(req, 'assessment', None)
 
+    # Назначение исполнителя (только админ и начальник отдела)
     assign_form = None
     if is_head_or_admin(request.user):
         initial_data = {}
@@ -242,20 +244,29 @@ def request_detail(request, pk):
                 req.responsible_specialist = specialist
                 req.save()
                 if specialist:
-                    log_history(req, request.user, f'Назначил(а) специалиста {specialist.username}')
+                    log_history(req, request.user, f'Назначил(а) исполнителя {specialist.username}')
                     create_notification(
                         specialist,
                         'Вам назначена заявка',
-                        f'Вам назначена заявка "{req.title}" от клиента {req.user.username}',
+                        f'Вы назначены исполнителем по заявке "{req.title}" от клиента {req.user.username}',
                         req
                     )
                 else:
                     log_history(req, request.user,
-                                f'Снял(а) назначение специалиста {old_specialist.username if old_specialist else ""}')
-                messages.success(request, f'Специалист {specialist.username if specialist else "снят"} назначен')
+                                f'Снял(а) исполнителя {old_specialist.username if old_specialist else ""}')
+                messages.success(request, f'Исполнитель {specialist.username if specialist else "снят"} назначен')
                 return redirect('request_detail', pk=pk)
 
-    if request.method == 'POST' and 'change_status' in request.POST and is_head_or_admin(request.user):
+    # Изменение статуса — ТОЛЬКО СПЕЦИАЛИСТ и АДМИН
+    if request.method == 'POST' and 'change_status' in request.POST:
+        if not (request.user.role and request.user.role.name in ['Специалист', 'Администратор']):
+            messages.error(request, 'Нет прав на изменение статуса')
+            return redirect('request_detail', pk=pk)
+
+        if request.user.role.name == 'Специалист' and req.responsible_specialist != request.user:
+            messages.error(request, 'Вы можете менять статус только в назначенных вам заявках')
+            return redirect('request_detail', pk=pk)
+
         new_status_id = request.POST.get('status_id')
         if new_status_id:
             try:
@@ -315,8 +326,6 @@ def request_detail(request, pk):
         'assign_form': assign_form,
         'statuses': RequestStatus.objects.all(),
     })
-
-
 
 @login_required
 def request_edit(request, pk):
@@ -444,75 +453,193 @@ def deleted_requests(request):
 @user_passes_test(is_head_or_admin)
 def statistics(request):
     try:
-        import matplotlib.pyplot as plt
         plt.rcParams['font.family'] = 'sans-serif'
         plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans']
 
-        statuses = RequestStatus.objects.all()
-        labels, counts = [], []
-        colors = ['#3498db', '#f39c12', '#2ecc71', '#e74c3c', '#9b59b6']
+        base_qs = Request.objects.filter(delete_date__isnull=True)
 
-        for st in statuses:
-            cnt = Request.objects.filter(status=st, delete_date__isnull=True).count()
-            if cnt > 0:
-                labels.append(st.name)
-                counts.append(cnt)
+        # Карточки
+        total_requests = base_qs.count()
+        new_count = base_qs.filter(status__name='Новая').count()
+        approved_count = base_qs.filter(status__name='Одобрена').count()
+        rejected_count = base_qs.filter(status__name='Отклонена').count()
+        approval_rate = round(approved_count / total_requests * 100, 1) if total_requests > 0 else 0
+        avg_budget = base_qs.filter(status__name='Одобрена', budget__isnull=False).aggregate(avg=Avg('budget'))['avg'] or 0
 
-        if not counts:
-            return render(request, 'statistics.html', {'graph': None})
+        # График 1: пирог
+        pie_chart = None
+        if total_requests > 0:
+            labels, counts, colors = [], [], ['#3498db', '#2ecc71', '#e74c3c']
+            for name, color in zip(['Новая', 'Одобрена', 'Отклонена'], colors):
+                cnt = base_qs.filter(status__name=name).count()
+                if cnt > 0:
+                    labels.append(name)
+                    counts.append(cnt)
+            if counts:
+                fig, ax = plt.subplots(figsize=(7, 7))
+                ax.pie(counts, labels=labels, autopct='%1.1f%%', startangle=90,
+                       colors=colors[:len(labels)], wedgeprops={'edgecolor': 'white', 'linewidth': 2})
+                ax.set_title('Распределение заявок по статусам', fontsize=14, fontweight='bold')
+                buf = io.BytesIO()
+                plt.savefig(buf, format='png', dpi=150, bbox_inches='tight', facecolor='white')
+                buf.seek(0)
+                pie_chart = base64.b64encode(buf.read()).decode('utf-8')
+                plt.close()
 
-        plt.figure(figsize=(10, 6))
-        bars = plt.bar(labels, counts, color=colors[:len(labels)], edgecolor='black', linewidth=1)
+        # График 2: столбцы по направлениям
+        bar_chart = None
+        direction_data = base_qs.values('direction__name').annotate(
+            total=Count('id'),
+            new=Count('id', filter=Q(status__name='Новая')),
+            approved=Count('id', filter=Q(status__name='Одобрена')),
+            rejected=Count('id', filter=Q(status__name='Отклонена')),
+        ).order_by('-total')[:8]
+        if direction_data:
+            directions = [d['direction__name'] for d in direction_data]
+            x = range(len(directions))
+            width = 0.25
+            fig, ax = plt.subplots(figsize=(12, 6))
+            ax.bar([i - width for i in x], [d['new'] for d in direction_data], width, label='Новые', color='#3498db')
+            ax.bar(x, [d['approved'] for d in direction_data], width, label='Одобрены', color='#2ecc71')
+            ax.bar([i + width for i in x], [d['rejected'] for d in direction_data], width, label='Отклонены', color='#e74c3c')
+            ax.set_xticks(x)
+            ax.set_xticklabels(directions, rotation=30, ha='right')
+            ax.legend()
+            ax.yaxis.grid(True, linestyle='--', alpha=0.3)
+            plt.tight_layout()
+            buf = io.BytesIO()
+            plt.savefig(buf, format='png', dpi=150, bbox_inches='tight', facecolor='white')
+            buf.seek(0)
+            bar_chart = base64.b64encode(buf.read()).decode('utf-8')
+            plt.close()
 
-        for bar, count in zip(bars, counts):
-            plt.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.1,
-                     str(count), ha='center', va='bottom', fontsize=12, fontweight='bold')
+        # График 3: линия по месяцам
+        line_chart = None
+        monthly_data = base_qs.annotate(month=TruncMonth('submission_date')).values('month').annotate(
+            total=Count('id'),
+            approved=Count('id', filter=Q(status__name='Одобрена'))
+        ).order_by('month')[:12]
+        if monthly_data:
+            months = [d['month'].strftime('%b %Y') if d['month'] else '?' for d in monthly_data]
+            fig, ax = plt.subplots(figsize=(12, 5))
+            ax.plot(range(len(months)), [d['total'] for d in monthly_data], 'o-', color='#3498db', linewidth=2.5, label='Всего')
+            ax.plot(range(len(months)), [d['approved'] for d in monthly_data], 's--', color='#2ecc71', linewidth=2, label='Одобрено')
+            ax.set_xticks(range(len(months)))
+            ax.set_xticklabels(months, rotation=30, ha='right')
+            ax.legend()
+            ax.yaxis.grid(True, linestyle='--', alpha=0.3)
+            plt.tight_layout()
+            buf = io.BytesIO()
+            plt.savefig(buf, format='png', dpi=150, bbox_inches='tight', facecolor='white')
+            buf.seek(0)
+            line_chart = base64.b64encode(buf.read()).decode('utf-8')
+            plt.close()
 
-        plt.title('Распределение заявок по статусам', fontsize=16, fontweight='bold', pad=20)
-        plt.xlabel('Статус', fontsize=12, fontweight='bold')
-        plt.ylabel('Количество заявок', fontsize=12, fontweight='bold')
-        plt.xticks(rotation=0, fontsize=11)
-        plt.yticks(fontsize=10)
-        plt.grid(axis='y', linestyle='--', alpha=0.7)
-        plt.tight_layout()
+        # Топ клиентов
+        top_clients = base_qs.values('user__username', 'user__first_name', 'user__last_name').annotate(
+            total=Count('id'),
+            approved=Count('id', filter=Q(status__name='Одобрена')),
+        ).order_by('-total')[:5]
 
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
-        buf.seek(0)
-        graph_base64 = base64.b64encode(buf.read()).decode('utf-8')
-        plt.close()
+        # Таблица направлений
+        direction_table = base_qs.values('direction__name').annotate(
+            total=Count('id'),
+            new=Count('id', filter=Q(status__name='Новая')),
+            approved=Count('id', filter=Q(status__name='Одобрена')),
+            rejected=Count('id', filter=Q(status__name='Отклонена')),
+        ).order_by('-total')
 
-        return render(request, 'statistics.html', {'graph': graph_base64})
+        context = {
+            'total_requests': total_requests,
+            'new_count': new_count,
+            'approved_count': approved_count,
+            'rejected_count': rejected_count,
+            'approval_rate': approval_rate,
+            'avg_budget': avg_budget,
+            'pie_chart': pie_chart,
+            'bar_chart': bar_chart,
+            'line_chart': line_chart,
+            'top_clients': top_clients,
+            'direction_table': direction_table,
+        }
+        return render(request, 'statistics.html', context)
     except Exception as e:
-        messages.error(request, f'Ошибка графика: {str(e)}')
+        messages.error(request, f'Ошибка построения статистики: {str(e)}')
         return redirect('home')
 
 
 
 @user_passes_test(is_head_or_admin)
 def requests_report(request):
-    try:
-        start_date = request.GET.get('start_date')
-        end_date = request.GET.get('end_date')
-        report_data = None
+    start_date = request.GET.get('start_date', '')
+    end_date = request.GET.get('end_date', '')
+    direction_id = request.GET.get('direction_id', 'all')
+    status_name = request.GET.get('status', 'all')
+    report_type = request.GET.get('report_type', 'summary')
 
-        if start_date and end_date:
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    SELECT d.name, COUNT(r.id), d.id
-                    FROM cint_request r
-                    JOIN cint_direction d ON r.direction_id = d.id
-                    WHERE r.submission_date BETWEEN %s AND %s
-                      AND r.delete_date IS NULL
-                    GROUP BY d.name, d.id
-                    ORDER BY d.name
-                """, [start_date, end_date])
-                report_data = cursor.fetchall()
+    report_data = None
+    summary = None
+    detailed_list = None
+    specialist_data = None
 
-        return render(request, 'report.html', {'report_data': report_data})
-    except Exception as e:
-        messages.error(request, f'Ошибка формирования отчёта: {e}')
-        return render(request, 'report.html')
+    if start_date and end_date:
+        qs = Request.objects.filter(
+            submission_date__date__gte=start_date,
+            submission_date__date__lte=end_date,
+            delete_date__isnull=True
+        ).select_related('user', 'status', 'direction')
+
+        if direction_id != 'all':
+            qs = qs.filter(direction_id=direction_id)
+        if status_name != 'all':
+            qs = qs.filter(status__name=status_name)
+
+        summary = {
+            'total': qs.count(),
+            'new': qs.filter(status__name='Новая').count(),
+            'approved': qs.filter(status__name='Одобрена').count(),
+            'rejected': qs.filter(status__name='Отклонена').count(),
+            'total_budget': qs.filter(budget__isnull=False).aggregate(s=Sum('budget'))['s'] or 0,
+            'avg_budget': qs.filter(budget__isnull=False).aggregate(a=Avg('budget'))['a'] or 0,
+            'period_start': start_date,
+            'period_end': end_date,
+        }
+
+        if report_type == 'summary':
+            report_data = qs.values('direction__name').annotate(
+                total=Count('id'),
+                new=Count('id', filter=Q(status__name='Новая')),
+                approved=Count('id', filter=Q(status__name='Одобрена')),
+                rejected=Count('id', filter=Q(status__name='Отклонена')),
+                total_budget=Sum('budget', filter=Q(budget__isnull=False)),
+            ).order_by('-total')
+        elif report_type == 'detailed':
+            detailed_list = qs.order_by('-submission_date')[:200]
+        elif report_type == 'specialist':
+            specialist_data = qs.filter(responsible_specialist__isnull=False).values('responsible_specialist__username').annotate(
+                total=Count('id'),
+                approved=Count('id', filter=Q(status__name='Одобрена')),
+                rejected=Count('id', filter=Q(status__name='Отклонена')),
+                avg_hours=Avg('assessment__labor_hours'),
+            ).order_by('-total')
+
+    directions = Direction.objects.all()
+    statuses = RequestStatus.objects.all()
+
+    context = {
+        'directions': directions,
+        'statuses': statuses,
+        'report_data': report_data,
+        'summary': summary,
+        'detailed_list': detailed_list,
+        'specialist_data': specialist_data,
+        'start_date': start_date,
+        'end_date': end_date,
+        'selected_direction': direction_id,
+        'selected_status': status_name,
+        'report_type': report_type,
+    }
+    return render(request, 'report.html', context)
 
 
 
@@ -558,3 +685,10 @@ def export_requests_csv(request):
     except Exception as e:
         messages.error(request, f'Ошибка экспорта: {e}')
         return redirect('request_list')
+
+
+@login_required
+def print_request(request, pk):
+    req = get_object_or_404(Request, pk=pk, delete_date__isnull=True)
+    assessment = getattr(req, 'assessment', None)
+    return render(request, 'print_request.html', {'req': req, 'assessment': assessment})

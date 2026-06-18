@@ -88,7 +88,7 @@ class AssessmentForm(forms.ModelForm):
 class AssignSpecialistForm(forms.Form):
     specialist = forms.ModelChoiceField(
         queryset=User.objects.filter(role__name='Специалист'),
-        label='Назначить специалиста',
+        label='Назначить исполнителя',
         required=False,
         empty_label="Не назначен",
         widget=forms.Select(attrs={'class': 'form-select'})

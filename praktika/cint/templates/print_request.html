@@ -1,0 +1,64 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Заявка №{{ req.id }} — печатная форма</title>
+    <style>
+        @media print {
+            body { font-family: 'Times New Roman', serif; margin: 15px; color: #000; font-size: 12pt; }
+            .no-print { display: none; }
+        }
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { text-align: center; font-size: 16pt; margin-bottom: 5px; }
+        h2 { text-align: center; font-size: 12pt; margin-top: 0; color: #555; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+        th, td { border: 1px solid #333; padding: 6px 10px; text-align: left; font-size: 11pt; }
+        th { background: #eee; font-weight: bold; width: 200px; }
+        .footer { margin-top: 30px; font-size: 10pt; }
+        .footer div { margin-bottom: 10px; }
+        .btn-print { margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <button onclick="window.print()" class="btn btn-primary no-print btn-print">
+        <i class="bi bi-printer"></i> Печать
+    </button>
+    <button onclick="window.close()" class="btn btn-secondary no-print btn-print ms-2">
+        Закрыть
+    </button>
+
+    <h1>ГАУ РХ «ЦИНТ Хакасии»</h1>
+    <h2>Заявка на выполнение работ №{{ req.id }}</h2>
+
+    <table>
+        <tr><th>Название проекта</th><td>{{ req.title }}</td></tr>
+        <tr><th>Клиент</th><td>{{ req.user.get_full_name|default:req.user.username }}</td></tr>
+        <tr><th>Направление</th><td>{{ req.direction.name }}</td></tr>
+        <tr><th>Статус</th><td>{{ req.status.name }}</td></tr>
+        <tr><th>Дата подачи</th><td>{{ req.submission_date|date:"d.m.Y H:i" }}</td></tr>
+        <tr><th>Желаемый срок</th><td>{{ req.deadline|date:"d.m.Y"|default:"Не указан" }}</td></tr>
+        <tr><th>Бюджет</th><td>{% if req.budget %}{{ req.budget|floatformat:2 }} руб.{% else %}Не указан{% endif %}</td></tr>
+        <tr><th>Исполнитель</th><td>{{ req.responsible_specialist.get_full_name|default:req.responsible_specialist.username|default:"Не назначен" }}</td></tr>
+    </table>
+
+    {% if req.goal %}<h3>Цель</h3><p>{{ req.goal }}</p>{% endif %}
+    {% if req.expected_results %}<h3>Ожидаемые результаты</h3><p>{{ req.expected_results }}</p>{% endif %}
+    {% if req.description %}<h3>Описание</h3><p>{{ req.description }}</p>{% endif %}
+
+    {% if assessment %}
+    <h3>Оценка специалиста</h3>
+    <table>
+        <tr><th>Специалист</th><td>{{ assessment.specialist.get_full_name|default:assessment.specialist.username }}</td></tr>
+        <tr><th>Трудозатраты</th><td>{{ assessment.labor_hours|default:"—" }} часов</td></tr>
+        <tr><th>Ресурсы</th><td>{{ assessment.resources|default:"—" }}</td></tr>
+        <tr><th>Заключение</th><td>{{ assessment.conclusion|default:"—" }}</td></tr>
+    </table>
+    {% endif %}
+
+    <div class="footer">
+        <div>Дата формирования: {% now "d.m.Y H:i" %}</div>
+        <div>Подпись ответственного: _________________________</div>
+    </div>
+</body>
+</html>

@@ -14,6 +14,12 @@
         <i class="bi bi-file-earmark-excel"></i> Экспорт в CSV
     </a>
 
+    {% if request.GET.from == 'statistics' %}
+    <a href="{% url 'statistics' %}" class="btn btn-outline-info ms-2">
+        <i class="bi bi-arrow-return-left"></i> Вернуться к статистике
+    </a>
+    {% endif %}
+
     {% if request.GET.start_date and request.GET.end_date %}
     <a href="{% url 'requests_report' %}?start_date={{ request.GET.start_date }}&end_date={{ request.GET.end_date }}"
        class="btn btn-outline-info ms-2">
@@ -40,7 +46,7 @@
         <select name="status" id="status" class="form-select">
             <option value="all">Все статусы</option>
             {% for s in statuses %}
-                <option value="{{ s.id }}" {% if selected_status == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
+                <option value="{{ s.name }}" {% if selected_status == s.name %}selected{% endif %}>{{ s.name }}</option>
             {% endfor %}
         </select>
     </div>
